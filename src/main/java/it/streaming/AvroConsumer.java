@@ -50,7 +50,7 @@ public class AvroConsumer<P, C> {
 
         final Consumer<String, P> consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Arrays.asList(this.topic));
-        List<C> map = new LinkedList<>();
+        List<C> list = new LinkedList<>();
 
         long start = System.currentTimeMillis();
         long stop = System.currentTimeMillis();
@@ -60,7 +60,7 @@ public class AvroConsumer<P, C> {
                 ConsumerRecords<String, P> records = consumer.poll(100);
                 for (ConsumerRecord<String, P> record : records) {
                     C u = this.recordBuilder.consume(record);
-                    map.add(u);
+                    if (u != null) list.add(u);
                     String message = "offset = " + record.offset() + " , key = " + record.key() + " , value = " + record.value();
                     log.info(message);
                 }
@@ -73,7 +73,7 @@ public class AvroConsumer<P, C> {
         } finally {
             consumer.close();
         }
-        return map;
+        return list;
 
     }
 

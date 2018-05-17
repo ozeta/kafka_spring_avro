@@ -182,7 +182,7 @@ public class KafkaController {
         List<User> consume;
         if (specific) {
             consume = new AvroConsumer<AvroUser, User>(appPropDao.getIp(), appPropDao.getPort(), _topic)
-                    .withGeneric()
+                    .withSpecific()
                     .consume();
         } else {
             consume = new AvroConsumer<GenericRecord, User>(appPropDao.getIp(), appPropDao.getPort(), _topic)
@@ -190,11 +190,13 @@ public class KafkaController {
                     .consume();
         }
 
-
-        StringBuilder message = new StringBuilder();
         List<User> collect = consume.stream()
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        collect.forEach(o -> {
+            log.info("UserProcessor# Response: " + o.toString());
+        });
+
         return collect;
     }
 

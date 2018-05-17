@@ -12,7 +12,7 @@ public class User {
 
     @Override
     public String toString() {
-        return new JSONObject(this).toString(2);
+        return new JSONObject(this).toString();
     }
 
     @Override
