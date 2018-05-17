@@ -1,0 +1,11 @@
+{
+   "namespace": "it",
+   "doc":"User documentation",
+   "type": "record",
+   "name": "AvroUser",
+   "fields": [
+      {"name": "id", "type": "string"},
+      {"name": "name", "type": "string"},
+      {"name": "surname", "type": "string"}
+   ]
+}
