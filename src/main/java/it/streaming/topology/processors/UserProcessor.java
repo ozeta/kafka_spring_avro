@@ -2,12 +2,14 @@ package it.streaming.topology.processors;
 
 
 import it.model.StateStoreWrapperSingleton;
+import it.spring.ApplicationPropertyDAO;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.lang.invoke.MethodHandles;
@@ -15,23 +17,20 @@ import java.lang.invoke.MethodHandles;
 @Component
 public class UserProcessor implements Processor<String, GenericRecord> {
     private static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    StateStoreWrapperSingleton storeWrapper;
     private ProcessorContext context;
     private KeyValueStore<String, GenericRecord> kvStore;
-/*
+    private ApplicationPropertyDAO appDao;
+
     @Autowired
     public ApplicationPropertyDAO getAppPropertyDao() {
-        return appPropertyDao;
-    }*/
+        return appDao;
+    }
 
     @Override
     @SuppressWarnings("unchecked")
     public void init(ProcessorContext context) {
         this.context = context;
-        kvStore = (KeyValueStore) context.getStateStore("storage1");
-        //storeWrapper = StateStoreWrapperSingleton.getInstance();
-        //storeWrapper.setKvStore(kvStore);
-        //storeWrapper.setProcessorContext(context);
+        this.kvStore = (KeyValueStore) context.getStateStore(appDao.getUserStateStore());
     }
 
     @Override
@@ -49,16 +48,10 @@ public class UserProcessor implements Processor<String, GenericRecord> {
         //deprecated
     }
 
-
     @Override
     public void close() {
         //kvStore.close();
     }
-
-    public ProcessorContext getContext() {
-        return this.context;
-    }
-
     public KeyValueStore<String, GenericRecord> getKvStore() {
         return kvStore;
     }

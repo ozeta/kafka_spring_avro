@@ -39,14 +39,14 @@ public class JerseyTopologyParam<P, C, K, V> {
 
     private static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    ApplicationPropertyDAO appPropertyDao;
+    ApplicationPropertyDAO appDao;
     private Topology topology;
     private KafkaStreams streams;
 
     @Autowired
     UserProcessor userProcessor;
 
-    public KafkaStreams getStreams1() {
+    public KafkaStreams getRequestStream() {
         return streams;
     }
 
@@ -54,24 +54,24 @@ public class JerseyTopologyParam<P, C, K, V> {
 
 
         StreamsBuilder builder = new StreamsBuilder();
-        StoreBuilder<KeyValueStore<V, K>> storeBuilder = buildStore(appPropertyDao.getSchemaRegistryHost(), appPropertyDao.getStateStore1());
+        StoreBuilder<KeyValueStore<V, K>> storeBuilder = buildStore(appDao.getSchemaRegistryHost(), appDao.getRequestStateStore());
 //        userStore = storeBuilder.build();
         //region kafka settings
         Properties settings = new Properties();
         // Set a few key parameters
         settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "avro-stream-topology");
-        settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, appPropertyDao.getIp() + ":" + appPropertyDao.getPort());
+        settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, appDao.getIp() + ":" + appDao.getPort());
         settings.put(StreamsConfig.STATE_DIR_CONFIG, "tmp/kafka-streams");
         settings.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         settings.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, GenericAvroSerde.class);
-        settings.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, appPropertyDao.getSchemaRegistryHost() + ":" + appPropertyDao.getSchemaRegistryPort());
+        settings.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, appDao.getSchemaRegistryHost() + ":" + appDao.getSchemaRegistryPort());
         //endregion
         StreamsConfig config = new StreamsConfig(settings);
 
         //region kafka settings
         topology = builder
                 .build()
-                .addSource("SOURCE", appPropertyDao.getTopic())
+                .addSource("SOURCE", appDao.getTopic())
                 .addProcessor("Process",
                         new ProcessorSupplier() {
                             @Override
@@ -81,7 +81,7 @@ public class JerseyTopologyParam<P, C, K, V> {
                         }
                         , "SOURCE")
                 .addStateStore(storeBuilder, "Process")
-                .addSink("SINK", appPropertyDao.getTopologyTopic(), "Process")
+                .addSink("SINK", appDao.getTopologyTopic(), "Process")
         ;
         //endregion
         streams = new KafkaStreams(topology, config);
@@ -96,8 +96,8 @@ public class JerseyTopologyParam<P, C, K, V> {
     }
 
     @Autowired
-    public void setAppPropertyDao(ApplicationPropertyDAO appPropertyDao) {
-        this.appPropertyDao = appPropertyDao;
+    public void setAppDao(ApplicationPropertyDAO appDao) {
+        this.appDao = appDao;
         System.out.println("ciao");
     }
 

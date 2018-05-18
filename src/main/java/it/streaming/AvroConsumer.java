@@ -1,5 +1,6 @@
 package it.streaming;
 
+import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import it.model.User;
@@ -11,23 +12,24 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
-
+@Component
 public class AvroConsumer<P, C> {
     private String ip;
     private String topic;
-    private String port;
+    private String topicPort;
     private AvroBuilder<P, C> recordBuilder;
 
 
-    public AvroConsumer(String ip, String port, String topic) {
+    public AvroConsumer(String ip, String topicPort, String topic) {
         this.ip = ip;
-        this.port = port;
+        this.topicPort = topicPort;
         this.topic = topic;
     }
 
@@ -36,7 +38,7 @@ public class AvroConsumer<P, C> {
         Logger log = Logger.getLogger(AvroConsumer.class);
         Properties props = new Properties();
 
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, ip + ":" + port);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, ip + ":" + topicPort);
         props.put(ConsumerConfig.GROUP_ID_CONFIG,
                 "group" + String
                         .valueOf(System.currentTimeMillis())
@@ -44,7 +46,7 @@ public class AvroConsumer<P, C> {
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
-        props.put("schema.registry.url", "http://" + ip + ":8081");
+        props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://" + ip + ":8081");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
 

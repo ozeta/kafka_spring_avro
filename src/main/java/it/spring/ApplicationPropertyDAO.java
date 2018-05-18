@@ -1,27 +1,29 @@
 package it.spring;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-@Service
+@Component
 public class ApplicationPropertyDAO {
     @Value("${kafka.ip}")
     private String ip;
     @Value("${kafka.topic}")
     private String topic;
     @Value("${kafka.topic.async.request}")
-    String asyncRequestTopic;
-
+    private String asyncRequestTopic;
     @Value("${kafka.topic.async.response}")
-    String asyncResponseTopic;
+    private String asyncResponseTopic;
     @Value("kafka.topology.topic")
     private String topologyTopic;
-    @Value("${kafka.port}")
+    @Value("${kafka.topic.port}")
     private String port;
-    @Value("${kafka.state_store1}")
-    private String stateStore1;
-    @Value("${kafka.state_store2}")
-    private String stateStore2;
+    @Value("${kafka.state.store.user}")
+    private String userStateStore;
+    @Value("${kafka.state.store.request}")
+    private String requestStateStore;
+    @Value("${kafka.state.store.response}")
+    private String responseStateStore;
     @Value("${kafka.schema.registry.host}")
     private String schemaRegistryHost;
     @Value("${kafka.schema.registry.port}")
@@ -43,11 +45,12 @@ public class ApplicationPropertyDAO {
         return port;
     }
 
-    public String getStateStore1() {
-        return stateStore1;
+    public String getRequestStateStore() {
+        return requestStateStore;
     }
-    public String getStateStore2() {
-        return stateStore2;
+
+    public String getResponseStateStore() {
+        return responseStateStore;
     }
 
     public String getSchemaRegistryHost() {
@@ -64,6 +67,10 @@ public class ApplicationPropertyDAO {
 
     public String getAsyncResponseTopic() {
         return asyncResponseTopic;
+    }
+
+    public String getUserStateStore() {
+        return userStateStore;
     }
 
 }

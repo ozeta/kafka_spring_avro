@@ -13,21 +13,7 @@
                 </RunConfigurationRef>
               </key>
               <value>
-                <Pins>
-                  <option name="pins">
-                    <list>
-                      <Pin>
-                        <option name="consoleUUID" value="05debaed-cf57-40ae-879e-f3fab1a090e6" />
-                        <option name="grepModel">
-                          <GrepModel>
-                            <option name="expression" value="UserProcessor" />
-                            <option name="unlessExpression" value="" />
-                          </GrepModel>
-                        </option>
-                      </Pin>
-                    </list>
-                  </option>
-                </Pins>
+                <Pins />
               </value>
             </entry>
           </map>

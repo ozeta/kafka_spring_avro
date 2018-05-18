@@ -1,5 +1,6 @@
 package it.streaming;
 
+import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import it.model.User;
 import it.model.avro.AvroBuilder;
@@ -24,15 +25,15 @@ public class AvroProducer<K, P, C> {
     private KafkaProducer<K, P> producer;
     private AvroBuilder<P, User> recordBuilder;
 
-    public AvroProducer(String ip, String port, String topic) {
+    public AvroProducer(String ip, String topicPort, String topic) {
         this.ip = ip;
-        this.port = port;
+        this.port = topicPort;
         this.topic = topic;
         this.props = new Properties();
         this.props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.ip + ":" + this.port);
         this.props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         this.props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
-        this.props.put("schema.registry.url", "http://" + this.ip + ":8081");
+        this.props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://" + this.ip + ":8081");
         this.producer = new KafkaProducer<>(this.props);
 
     }

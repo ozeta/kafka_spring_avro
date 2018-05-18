@@ -2,8 +2,8 @@ package it.streaming.topology.processors;
 
 
 import it.model.StateStoreWrapperSingleton;
+import it.model.avro.SpecificAvroUser;
 import it.spring.ApplicationPropertyDAO;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueStore;
@@ -19,75 +19,57 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class TopicResponseProcessor implements Processor<String, GenericRecord> {
+public class TopicResponseProcessor implements Processor<String, String> {
     private static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private ProcessorContext context;
-    private KeyValueStore<String, GenericRecord> kvStore;
-    private Random rand = new Random();
-    private StateStoreWrapperSingleton storeWrapper;
+    private KeyValueStore<String, SpecificAvroUser> kvStore;
     private ApplicationPropertyDAO appPropertyDao;
-    private ConcurrentHashMap<String, AsyncResponse> _tMap;
+    private ConcurrentHashMap<String, AsyncResponse> _tMap = new ConcurrentHashMap<>();
 
     @Autowired
-    public ApplicationPropertyDAO getAppPropertyDao() {
-        return appPropertyDao;
+    public void setAppPropertyDao(ApplicationPropertyDAO appPropertyDao) {
+        this.appPropertyDao = appPropertyDao;
     }
 
-    @Autowired
-    public void setConcurrentMap(ConcurrentHashMap<String, AsyncResponse> map) {
-        this._tMap = map;
-    }
+//    @Autowired
+//    public void setConcurrentMap(ConcurrentHashMap<String, AsyncResponse> map) {
+//        this._tMap = map;
+//    }
 
     @Override
     @SuppressWarnings("unchecked")
     public void init(ProcessorContext context) {
         this.context = context;
         if (appPropertyDao != null)
-            context.getStateStore(appPropertyDao.getStateStore1());
+            this.kvStore = (KeyValueStore) context.getStateStore(appPropertyDao.getUserStateStore());
 //        kvStore = (KeyValueStore) context.getStateStore("storage2");
     }
 
     @Override
-    public void process(String k, GenericRecord v) {
-        boolean b = rand.nextBoolean();
-        this.kvStore.put(k, v);
-        context.forward(k, v);
-        logger.info("UserProcessor#process: stored and forwarded" + v.toString());
+    public void process(String uuid, String booleanValue) {
+/*        AsyncResponse asyncResponse = this._tMap.get(uuid);
+        SpecificAvroUser user = kvStore.get(uuid);
+        if (booleanValue.equalsIgnoreCase("true")) {
+            asyncResponse.resume(Response.status(Response.Status.CREATED).entity(user).build());
+        } else {
+            asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST).entity(user).build());
+        }
+//        this.kvStore.put(k, v);
+        logger.info("UserProcessor#TOPIC_REQUEST_PROCESSOR#: stored and forwarded: " + uuid + ": " + user.toString());*/
+
     }
 
     @Override
     public void punctuate(long timestamp) {
-/*        this.context.schedule(1000, PunctuationType.STREAM_TIME, (timestamp) -> {
-            KeyValueIterator<String, Long> iter = this.kvStore.all();
-            while (iter.hasNext()) {
-                KeyValue<String, Long> entry = iter.next();
-                context.forward(entry.key, entry.value.toString());
-            }
-            iter.close();
-
-            // commit the current processing progress
-            context.commit();
-        });*/
         //deprecated
     }
-
 
     @Override
     public void close() {
         //kvStore.close();
     }
 
-    public ProcessorContext getContext() {
-        return this.context;
-    }
-
-    public KeyValueStore<String, GenericRecord> getKvStore() {
-        return kvStore;
-    }
-
-    private void processMap(String uuid){
-        AsyncResponse asyncResponse = this._tMap.get(uuid);
-        asyncResponse.resume(Response.status(Response.Status.CREATED).entity(created).build());
-
+    public ConcurrentHashMap<String, AsyncResponse> getConcurrentHashMap() {
+        return _tMap;
     }
 }

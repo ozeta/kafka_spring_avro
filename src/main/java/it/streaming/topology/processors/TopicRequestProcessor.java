@@ -3,7 +3,6 @@ package it.streaming.topology.processors;
 
 import it.model.StateStoreWrapperSingleton;
 import it.spring.ApplicationPropertyDAO;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueStore;
@@ -12,23 +11,23 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.container.AsyncResponse;
 import java.lang.invoke.MethodHandles;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class TopicRequestProcessor implements Processor<String, GenericRecord> {
+public class TopicRequestProcessor implements Processor<String, String> {
     private static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private ProcessorContext context;
-    private KeyValueStore<String, GenericRecord> kvStore;
+    private KeyValueStore<String, String> kvStore;
     private Random rand = new Random();
     private StateStoreWrapperSingleton storeWrapper;
+
+
     private ApplicationPropertyDAO appPropertyDao;
 
     @Autowired
-    public ApplicationPropertyDAO getAppPropertyDao() {
-        return appPropertyDao;
+    public void setAppPropertyDao(ApplicationPropertyDAO appPropertyDao) {
+        this.appPropertyDao = appPropertyDao;
     }
 
     @Override
@@ -36,20 +35,8 @@ public class TopicRequestProcessor implements Processor<String, GenericRecord> {
     public void init(ProcessorContext context) {
         this.context = context;
         if (appPropertyDao != null)
-            context.getStateStore(appPropertyDao.getStateStore1());
+            this.kvStore = (KeyValueStore) context.getStateStore(appPropertyDao.getRequestStateStore());
 //        kvStore = (KeyValueStore) context.getStateStore("storage2");
-    }
-
-    @Override
-    public void process(String k, GenericRecord v) {
-        boolean b = rand.nextBoolean();
-        this.kvStore.put(k, v);
-        context.forward(k, v);
-        logger.info("UserProcessor#process: stored and forwarded" + v.toString());
-    }
-
-    @Override
-    public void punctuate(long timestamp) {
 /*        this.context.schedule(1000, PunctuationType.STREAM_TIME, (timestamp) -> {
             KeyValueIterator<String, Long> iter = this.kvStore.all();
             while (iter.hasNext()) {
@@ -64,17 +51,22 @@ public class TopicRequestProcessor implements Processor<String, GenericRecord> {
         //deprecated
     }
 
+    @Override
+    public void process(String k, String v) {
+        Boolean b = rand.nextBoolean();
+        this.kvStore.put(k, b.toString());
+        context.forward(k, b.toString());
+        logger.info("UserProcessor#TOPIC_REQUEST_PROCESSOR#: stored and forwarded: " + k + ": " + b.toString());
+    }
+
+    @Override
+    public void punctuate(long timestamp) {
+
+    }
+
 
     @Override
     public void close() {
-        //kvStore.close();
     }
 
-    public ProcessorContext getContext() {
-        return this.context;
-    }
-
-    public KeyValueStore<String, GenericRecord> getKvStore() {
-        return kvStore;
-    }
 }

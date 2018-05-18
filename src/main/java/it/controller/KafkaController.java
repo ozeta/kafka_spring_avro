@@ -5,7 +5,7 @@ import it.model.avro.SpecificAvroUser;
 import it.spring.ApplicationPropertyDAO;
 import it.streaming.AvroConsumer;
 import it.streaming.AvroProducer;
-import it.streaming.topology.JerseyTopology;
+import it.streaming.topology.AsyncTopology;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.kafka.streams.KafkaStreams;
@@ -31,12 +31,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-//import it.streaming.AvroConsumer;
-
 
 @Component
 @Path("/kafka")
@@ -44,10 +42,10 @@ public class KafkaController {
 
     Logger log = Logger.getLogger(KafkaController.class);
 
-    JerseyTopology jerseyTopology;
+    AsyncTopology asyncTopology;
     ConcurrentHashMap<String, AsyncResponse> _tMap;
     private ApplicationPropertyDAO appPropDao;
-    private JerseyTopology topology;
+    private AsyncTopology topology;
 
     public static <T> T waitUntilStoreIsQueryable(final String storeName,
                                                   final QueryableStoreType<T> queryableStoreType,
@@ -63,7 +61,7 @@ public class KafkaController {
     }
 
     @Autowired
-    public void setTopology(JerseyTopology topology) {
+    public void setTopology(AsyncTopology topology) {
         this.topology = topology;
         this.topology.init();
 
@@ -79,7 +77,7 @@ public class KafkaController {
     @Produces(MediaType.APPLICATION_JSON_VALUE)
     public User storeGet(@PathParam("id") String id) {
         StringBuilder message = new StringBuilder();
-        KeyValueStore<String, GenericRecord> store = jerseyTopology.getUserProcessorKeyValueStore();
+        KeyValueStore<String, GenericRecord> store = asyncTopology.getUserProcessorKeyValueStore();
         log.info("UserProcessor# LOOP1");
 
         store.all().forEachRemaining(el -> {
@@ -110,7 +108,7 @@ public class KafkaController {
     @Produces(MediaType.APPLICATION_JSON_VALUE)
     public List<User> topology() {
         StringBuilder message = new StringBuilder();
-        KeyValueStore<String, GenericRecord> store = jerseyTopology.getUserProcessorKeyValueStore();
+        KeyValueStore<String, GenericRecord> store = asyncTopology.getUserProcessorKeyValueStore();
         LinkedList<JSONObject> l = new LinkedList<>();
         LinkedList<User> lUsers = new LinkedList<>();
         store.all().forEachRemaining(el -> {
@@ -171,10 +169,16 @@ public class KafkaController {
                         .entity("Operation timed out after " + timeout + " ms.")
                         .build()));
         String uuid = this.getUUID();
+        _tMap = asyncTopology.getConcurrentHashMap();
         _tMap.put(uuid, asyncResponse);
         Future response = new AvroProducer<String, SpecificAvroUser, User>(appPropDao.getIp(), appPropDao.getPort(), appPropDao.getAsyncRequestTopic())
                 .withSpecificSerializer()
                 .produce(uuid, user);
+/*        try {
+            asyncResponse.resume(response.get().toString());
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }*/
     }
 
     @GET
