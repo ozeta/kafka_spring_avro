@@ -17,7 +17,7 @@ public class GenericAvroBuilder<P, C> implements AvroBuilder<P, C> {
                 "   \"namespace\": \"it\",\n" +
                 "   \"doc\":\"User documentation\",\n" +
                 "   \"type\": \"record\",\n" +
-                "   \"name\": \"AvroUser\",\n" +
+                "   \"name\": \"SpecificAvroUser\",\n" +
                 "   \"fields\": [\n" +
                 "      {\"name\": \"id\", \"type\": \"string\"},\n" +
                 "      {\"name\": \"name\", \"type\": \"string\"},\n" +

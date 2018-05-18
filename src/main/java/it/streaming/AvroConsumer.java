@@ -1,9 +1,10 @@
 package it.streaming;
 
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import it.model.User;
 import it.model.avro.AvroBuilder;
-import it.model.avro.AvroUser;
+import it.model.avro.SpecificAvroUser;
 import it.model.avro.GenericAvroBuilder;
 import it.model.avro.SpecificAvroBuilder;
 import org.apache.avro.generic.GenericRecord;
@@ -41,12 +42,11 @@ public class AvroConsumer<P, C> {
                         .valueOf(System.currentTimeMillis())
                         .substring(0, 5));
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-//        props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
         props.put("schema.registry.url", "http://" + ip + ":8081");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-//        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
 
         final Consumer<String, P> consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Arrays.asList(this.topic));
@@ -101,14 +101,14 @@ public class AvroConsumer<P, C> {
             @Override
             public C consume(ConsumerRecord<String, P> record) {
                 P value = record.value();
-                if (!(value instanceof AvroUser)) {
+                if (!(value instanceof SpecificAvroUser)) {
                     return null;
                 }
-                AvroUser avroUser = (AvroUser) value;
+                SpecificAvroUser specificAvroUser = (SpecificAvroUser) value;
                 User u = new User();
-                u.setId(avroUser.getId().toString());
-                u.setName(avroUser.getName().toString());
-                u.setSurname(avroUser.getSurname().toString());
+                u.setId(specificAvroUser.getId().toString());
+                u.setName(specificAvroUser.getName().toString());
+                u.setSurname(specificAvroUser.getSurname().toString());
                 return (C) u;
             }
         };

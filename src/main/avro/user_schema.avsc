@@ -1,5 +1,5 @@
 {
-   "namespace": "it",
+   "namespace": "it.model.avro",
    "doc":"User documentation",
    "type": "record",
    "name": "AvroUser",

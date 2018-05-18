@@ -1,29 +1,41 @@
 package it.controller;
 
-import it.AvroUser;
 import it.model.User;
+import it.model.avro.SpecificAvroUser;
 import it.spring.ApplicationPropertyDAO;
 import it.streaming.AvroConsumer;
 import it.streaming.AvroProducer;
 import it.streaming.topology.JerseyTopology;
-import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.QueryableStoreType;
 import org.apache.log4j.Logger;
+import org.glassfish.jersey.server.ManagedAsync;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.*;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Response;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+//import it.streaming.AvroConsumer;
 
 
 @Component
@@ -31,11 +43,9 @@ import java.util.stream.Collectors;
 public class KafkaController {
 
     Logger log = Logger.getLogger(KafkaController.class);
-    String myRecordSchema = "{\"type\":\"record\"," +
-            "\"name\":\"myrecord\"," +
-            "\"fields\":[{\"name\":\"f1\",\"type\":\"string\"}]}";
-    @Autowired
+
     JerseyTopology jerseyTopology;
+    ConcurrentHashMap<String, AsyncResponse> _tMap;
     private ApplicationPropertyDAO appPropDao;
     private JerseyTopology topology;
 
@@ -78,14 +88,9 @@ public class KafkaController {
             if (elId.equals(id)) {
                 log.info("UserProcessor# state store has found id: " + elId + "ID FOUND!!!!");
             }
-
         });
         log.info("UserProcessor# LOOP2");
 
-        store.all().forEachRemaining(el -> {
-            String elId = el.value.get("id").toString();
-            log.info("UserProcessor# state store has found id: " + elId);
-        });
         GenericRecord genericRecord = store.get(id);
         User user = null;
         if (genericRecord != null) {
@@ -138,10 +143,10 @@ public class KafkaController {
     @Path("/avro_producer")
     @Produces(MediaType.TEXT_PLAIN_VALUE)
     public String avroProducer(User user) {
-        Future response = new AvroProducer<AvroUser, User>(appPropDao.getIp(), appPropDao.getPort(), appPropDao.getTopic())
-//                .withGeneric()
-                .withSpecific()
-                .produce(user);
+        Future response = new AvroProducer<String, SpecificAvroUser, User>(appPropDao.getIp(), appPropDao.getPort(), appPropDao.getTopic())
+//                .withGenericSerializer()
+                .withSpecificSerializer()
+                .produce(user.getId(), user);
         try {
             if (response != null) {
                 Object o = response.get();
@@ -154,6 +159,45 @@ public class KafkaController {
         return "error";
     }
 
+    @POST
+    @ManagedAsync
+    @Path("/async_post")
+    @Produces(MediaType.APPLICATION_JSON_VALUE)
+    public void asyncPost(@Suspended final AsyncResponse asyncResponse, User user) {
+        int timeout = 1000;
+        asyncResponse.setTimeout(timeout, TimeUnit.MILLISECONDS);
+        asyncResponse.setTimeoutHandler(ar -> ar.resume(
+                Response.status(Response.Status.GATEWAY_TIMEOUT)
+                        .entity("Operation timed out after " + timeout + " ms.")
+                        .build()));
+        String uuid = this.getUUID();
+        _tMap.put(uuid, asyncResponse);
+        Future response = new AvroProducer<String, SpecificAvroUser, User>(appPropDao.getIp(), appPropDao.getPort(), appPropDao.getAsyncRequestTopic())
+                .withSpecificSerializer()
+                .produce(uuid, user);
+    }
+
+    @GET
+    @ManagedAsync
+    @Path("async_get/{uuid}")
+    @Produces(MediaType.APPLICATION_JSON_VALUE)
+    public void asyncGet(@PathParam("uuid") String id){
+//        _tMap.get(id).resume(result);
+    }
+
+    private String getUUID() {
+        UUID uuid = UUID.randomUUID();
+        String digest = "";
+        try {
+        MessageDigest salt = MessageDigest.getInstance("SHA-256");
+            salt.update(UUID.randomUUID().toString().getBytes("UTF-8"));
+            digest = Hex.encodeHexString(salt.digest());
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+            digest = String.valueOf(System.nanoTime());
+            e.printStackTrace();
+        }
+        return digest;
+    }
 
     @GET
     @Path("/avro_topology_consumer")
@@ -177,13 +221,12 @@ public class KafkaController {
     }
 
     private List<?> consumer(String _topic, Boolean specific) {
-        Schema schema = new Schema.Parser().parse(myRecordSchema);
-
         List<User> consume;
         if (specific) {
-            consume = new AvroConsumer<AvroUser, User>(appPropDao.getIp(), appPropDao.getPort(), _topic)
+            consume = new AvroConsumer<SpecificAvroUser, User>(appPropDao.getIp(), appPropDao.getPort(), _topic)
                     .withSpecific()
                     .consume();
+            log.info("UserProcessor# CONSUMED");
         } else {
             consume = new AvroConsumer<GenericRecord, User>(appPropDao.getIp(), appPropDao.getPort(), _topic)
                     .withGeneric()

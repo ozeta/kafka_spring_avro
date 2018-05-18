@@ -13,23 +13,23 @@ import org.apache.avro.message.SchemaStore;
 @SuppressWarnings("all")
 /** User documentation */
 @org.apache.avro.specific.AvroGenerated
-public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+public class SpecificAvroUser extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
   private static final long serialVersionUID = 2518480848362534883L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"AvroUser\",\"namespace\":\"it\",\"doc\":\"User documentation\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"surname\",\"type\":\"string\"}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"SpecificAvroUser\",\"namespace\":\"it.model.avro\",\"doc\":\"Avro User documentation\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"surname\",\"type\":\"string\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static SpecificData MODEL$ = new SpecificData();
 
-  private static final BinaryMessageEncoder<AvroUser> ENCODER =
-      new BinaryMessageEncoder<AvroUser>(MODEL$, SCHEMA$);
+  private static final BinaryMessageEncoder<SpecificAvroUser> ENCODER =
+      new BinaryMessageEncoder<SpecificAvroUser>(MODEL$, SCHEMA$);
 
-  private static final BinaryMessageDecoder<AvroUser> DECODER =
-      new BinaryMessageDecoder<AvroUser>(MODEL$, SCHEMA$);
+  private static final BinaryMessageDecoder<SpecificAvroUser> DECODER =
+      new BinaryMessageDecoder<SpecificAvroUser>(MODEL$, SCHEMA$);
 
   /**
    * Return the BinaryMessageDecoder instance used by this class.
    */
-  public static BinaryMessageDecoder<AvroUser> getDecoder() {
+  public static BinaryMessageDecoder<SpecificAvroUser> getDecoder() {
     return DECODER;
   }
 
@@ -37,17 +37,17 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
    * Create a new BinaryMessageDecoder instance for this class that uses the specified {@link SchemaStore}.
    * @param resolver a {@link SchemaStore} used to find schemas by fingerprint
    */
-  public static BinaryMessageDecoder<AvroUser> createDecoder(SchemaStore resolver) {
-    return new BinaryMessageDecoder<AvroUser>(MODEL$, SCHEMA$, resolver);
+  public static BinaryMessageDecoder<SpecificAvroUser> createDecoder(SchemaStore resolver) {
+    return new BinaryMessageDecoder<SpecificAvroUser>(MODEL$, SCHEMA$, resolver);
   }
 
-  /** Serializes this AvroUser to a ByteBuffer. */
+  /** Serializes this SpecificAvroUser to a ByteBuffer. */
   public java.nio.ByteBuffer toByteBuffer() throws java.io.IOException {
     return ENCODER.encode(this);
   }
 
-  /** Deserializes a AvroUser from a ByteBuffer. */
-  public static AvroUser fromByteBuffer(
+  /** Deserializes a SpecificAvroUser from a ByteBuffer. */
+  public static SpecificAvroUser fromByteBuffer(
       java.nio.ByteBuffer b) throws java.io.IOException {
     return DECODER.decode(b);
   }
@@ -61,7 +61,7 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
    * to their default values from the schema.  If that is desired then
    * one should use <code>newBuilder()</code>.
    */
-  public AvroUser() {}
+  public SpecificAvroUser() {}
 
   /**
    * All-args constructor.
@@ -69,7 +69,7 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
    * @param name The new value for name
    * @param surname The new value for surname
    */
-  public AvroUser(java.lang.CharSequence id, java.lang.CharSequence name, java.lang.CharSequence surname) {
+  public SpecificAvroUser(java.lang.CharSequence id, java.lang.CharSequence name, java.lang.CharSequence surname) {
     this.id = id;
     this.name = name;
     this.surname = surname;
@@ -146,36 +146,36 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
   }
 
   /**
-   * Creates a new AvroUser RecordBuilder.
-   * @return A new AvroUser RecordBuilder
+   * Creates a new SpecificAvroUser RecordBuilder.
+   * @return A new SpecificAvroUser RecordBuilder
    */
-  public static AvroUser.Builder newBuilder() {
-    return new AvroUser.Builder();
+  public static SpecificAvroUser.Builder newBuilder() {
+    return new SpecificAvroUser.Builder();
   }
 
   /**
-   * Creates a new AvroUser RecordBuilder by copying an existing Builder.
+   * Creates a new SpecificAvroUser RecordBuilder by copying an existing Builder.
    * @param other The existing builder to copy.
-   * @return A new AvroUser RecordBuilder
+   * @return A new SpecificAvroUser RecordBuilder
    */
-  public static AvroUser.Builder newBuilder(AvroUser.Builder other) {
-    return new AvroUser.Builder(other);
+  public static SpecificAvroUser.Builder newBuilder(SpecificAvroUser.Builder other) {
+    return new SpecificAvroUser.Builder(other);
   }
 
   /**
-   * Creates a new AvroUser RecordBuilder by copying an existing AvroUser instance.
+   * Creates a new SpecificAvroUser RecordBuilder by copying an existing SpecificAvroUser instance.
    * @param other The existing instance to copy.
-   * @return A new AvroUser RecordBuilder
+   * @return A new SpecificAvroUser RecordBuilder
    */
-  public static AvroUser.Builder newBuilder(AvroUser other) {
-    return new AvroUser.Builder(other);
+  public static SpecificAvroUser.Builder newBuilder(SpecificAvroUser other) {
+    return new SpecificAvroUser.Builder(other);
   }
 
   /**
-   * RecordBuilder for AvroUser instances.
+   * RecordBuilder for SpecificAvroUser instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<AvroUser>
-    implements org.apache.avro.data.RecordBuilder<AvroUser> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<SpecificAvroUser>
+    implements org.apache.avro.data.RecordBuilder<SpecificAvroUser> {
 
     private java.lang.CharSequence id;
     private java.lang.CharSequence name;
@@ -190,7 +190,7 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
      * Creates a Builder by copying an existing Builder.
      * @param other The existing Builder to copy.
      */
-    private Builder(AvroUser.Builder other) {
+    private Builder(SpecificAvroUser.Builder other) {
       super(other);
       if (isValidValue(fields()[0], other.id)) {
         this.id = data().deepCopy(fields()[0].schema(), other.id);
@@ -207,10 +207,10 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
     }
 
     /**
-     * Creates a Builder by copying an existing AvroUser instance
+     * Creates a Builder by copying an existing SpecificAvroUser instance
      * @param other The existing instance to copy.
      */
-    private Builder(AvroUser other) {
+    private Builder(SpecificAvroUser other) {
             super(SCHEMA$);
       if (isValidValue(fields()[0], other.id)) {
         this.id = data().deepCopy(fields()[0].schema(), other.id);
@@ -239,7 +239,7 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'id'.
       * @return This builder.
       */
-    public AvroUser.Builder setId(java.lang.CharSequence value) {
+    public SpecificAvroUser.Builder setId(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.id = value;
       fieldSetFlags()[0] = true;
@@ -259,7 +259,7 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'id' field.
       * @return This builder.
       */
-    public AvroUser.Builder clearId() {
+    public SpecificAvroUser.Builder clearId() {
       id = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -278,7 +278,7 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'name'.
       * @return This builder.
       */
-    public AvroUser.Builder setName(java.lang.CharSequence value) {
+    public SpecificAvroUser.Builder setName(java.lang.CharSequence value) {
       validate(fields()[1], value);
       this.name = value;
       fieldSetFlags()[1] = true;
@@ -298,7 +298,7 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'name' field.
       * @return This builder.
       */
-    public AvroUser.Builder clearName() {
+    public SpecificAvroUser.Builder clearName() {
       name = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -317,7 +317,7 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
       * @param value The value of 'surname'.
       * @return This builder.
       */
-    public AvroUser.Builder setSurname(java.lang.CharSequence value) {
+    public SpecificAvroUser.Builder setSurname(java.lang.CharSequence value) {
       validate(fields()[2], value);
       this.surname = value;
       fieldSetFlags()[2] = true;
@@ -337,7 +337,7 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
       * Clears the value of the 'surname' field.
       * @return This builder.
       */
-    public AvroUser.Builder clearSurname() {
+    public SpecificAvroUser.Builder clearSurname() {
       surname = null;
       fieldSetFlags()[2] = false;
       return this;
@@ -345,9 +345,9 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
 
     @Override
     @SuppressWarnings("unchecked")
-    public AvroUser build() {
+    public SpecificAvroUser build() {
       try {
-        AvroUser record = new AvroUser();
+        SpecificAvroUser record = new SpecificAvroUser();
         record.id = fieldSetFlags()[0] ? this.id : (java.lang.CharSequence) defaultValue(fields()[0]);
         record.name = fieldSetFlags()[1] ? this.name : (java.lang.CharSequence) defaultValue(fields()[1]);
         record.surname = fieldSetFlags()[2] ? this.surname : (java.lang.CharSequence) defaultValue(fields()[2]);
@@ -359,8 +359,8 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
   }
 
   @SuppressWarnings("unchecked")
-  private static final org.apache.avro.io.DatumWriter<AvroUser>
-    WRITER$ = (org.apache.avro.io.DatumWriter<AvroUser>)MODEL$.createDatumWriter(SCHEMA$);
+  private static final org.apache.avro.io.DatumWriter<SpecificAvroUser>
+    WRITER$ = (org.apache.avro.io.DatumWriter<SpecificAvroUser>)MODEL$.createDatumWriter(SCHEMA$);
 
   @Override public void writeExternal(java.io.ObjectOutput out)
     throws java.io.IOException {
@@ -368,8 +368,8 @@ public class AvroUser extends org.apache.avro.specific.SpecificRecordBase implem
   }
 
   @SuppressWarnings("unchecked")
-  private static final org.apache.avro.io.DatumReader<AvroUser>
-    READER$ = (org.apache.avro.io.DatumReader<AvroUser>)MODEL$.createDatumReader(SCHEMA$);
+  private static final org.apache.avro.io.DatumReader<SpecificAvroUser>
+    READER$ = (org.apache.avro.io.DatumReader<SpecificAvroUser>)MODEL$.createDatumReader(SCHEMA$);
 
   @Override public void readExternal(java.io.ObjectInput in)
     throws java.io.IOException {

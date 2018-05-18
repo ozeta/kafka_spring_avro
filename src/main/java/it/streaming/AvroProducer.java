@@ -15,13 +15,13 @@ import org.apache.log4j.Logger;
 import java.util.Properties;
 import java.util.concurrent.Future;
 
-public class AvroProducer<P, C> {
+public class AvroProducer<K, P, C> {
     Logger log = Logger.getLogger(AvroProducer.class);
     private String ip;
     private String port;
     private String topic;
     private Properties props;
-    private KafkaProducer<String, P> producer;
+    private KafkaProducer<K, P> producer;
     private AvroBuilder<P, User> recordBuilder;
 
     public AvroProducer(String ip, String port, String topic) {
@@ -37,19 +37,19 @@ public class AvroProducer<P, C> {
 
     }
 
-    public Future produce(User user) throws SerializationException {
+    public Future produce(K key, User user) throws SerializationException {
         if (this.recordBuilder == null) throw new RuntimeException("recordBuilder not configured");
         P build = this.recordBuilder.build(user);
-        ProducerRecord<String, P> record = new ProducerRecord<>(this.topic, user.getId(), build);
+        ProducerRecord<K, P> record = new ProducerRecord<>(this.topic, key, build);
             return this.producer.send(record);
     }
 
-    public AvroProducer<P, C> withGeneric() {
+    public AvroProducer<K, P, C> withGenericSerializer() {
         this.recordBuilder = new GenericAvroBuilder<>();
         return this;
     }
 
-    public AvroProducer<P, C> withSpecific() {
+    public AvroProducer<K, P, C> withSpecificSerializer() {
         this.recordBuilder = new SpecificAvroBuilder<>();
         return this;
     }

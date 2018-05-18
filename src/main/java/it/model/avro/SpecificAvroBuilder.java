@@ -15,13 +15,13 @@ public class SpecificAvroBuilder<P, C> implements AvroBuilder<P, C> {
             }
         }*/
     public P build(User user) {
-        AvroUser avroUser = new AvroUser();
+        SpecificAvroUser specificAvroUser = new SpecificAvroUser();
         String key = Long.toString(System.currentTimeMillis());
         key = user.getId() + key;
-        avroUser.setId(key);
-        avroUser.setName(user.getName());
-        avroUser.setSurname(user.getSurname());
-        return (P) avroUser;
+        specificAvroUser.setId(key);
+        specificAvroUser.setName(user.getName());
+        specificAvroUser.setSurname(user.getSurname());
+        return (P) specificAvroUser;
     }
 
     @Override
