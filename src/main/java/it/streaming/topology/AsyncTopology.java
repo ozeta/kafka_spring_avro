@@ -1,16 +1,16 @@
 package it.streaming.topology;
 
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
-import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import it.model.avro.SpecificAvroUser;
 import it.spring.ApplicationPropertyDAO;
 import it.streaming.topology.processors.TopicRequestProcessor;
 import it.streaming.topology.processors.TopicResponseProcessor;
 import it.streaming.topology.processors.UserProcessor;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.*;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
@@ -26,9 +26,12 @@ import org.springframework.stereotype.Service;
 import javax.ws.rs.container.AsyncResponse;
 import java.lang.invoke.MethodHandles;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("Duplicates")
 @Service
 public class AsyncTopology {
     private static Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -59,85 +62,104 @@ public class AsyncTopology {
         this.topicRequestProcessor = topicRequestProcessor;
     }
 
-    public KafkaStreams getRequestStream() {
-        return requestStream;
-    }
+    private void requestStream(StreamsConfig config) {
 
-    public void init() {
+        Map<String, String> props = new HashMap<>();
+        props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://" + appDao.getIp() + ":8081");
+        props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
+        Serializer avroSerializer = new KafkaAvroSerializer();
+        avroSerializer.configure(props, false);
+        Deserializer avroDeserialier = new KafkaAvroDeserializer();
+        avroDeserialier.configure(props, false);
+        Serde<Object> testSerde = Serdes.serdeFrom(avroSerializer, avroDeserialier);
+
+
+        StringSerializer stringSerializer = new StringSerializer();
+        StringDeserializer stringDeserializer = new StringDeserializer();
 
         StreamsBuilder builder = new StreamsBuilder();
-        SpecificAvroSerde<SpecificAvroUser> serde = new SpecificAvroSerde<>();
-        serde.configure(Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG,
+        SpecificAvroSerde<SpecificAvroUser> avroSerde = new SpecificAvroSerde<>();
+        avroSerde.configure(Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG,
                 appDao.getSchemaRegistryHost() + ":" + appDao.getSchemaRegistryPort()), false);
-
-        StoreBuilder<KeyValueStore<String, SpecificAvroUser>> userStore = Stores.keyValueStoreBuilder(
-                Stores.inMemoryKeyValueStore(appDao.getUserStateStore()),
+        StoreBuilder<KeyValueStore<String, SpecificAvroUser>> requestStore = Stores.keyValueStoreBuilder(
+                Stores.inMemoryKeyValueStore(appDao.getRequestStateStore()),
                 Serdes.String(),
-                serde);
+                avroSerde);
 
-        StoreBuilder<KeyValueStore<String, String>> requestStore = buildStore(appDao.getRequestStateStore(), Serdes.String(), Serdes.String());
-        StoreBuilder<KeyValueStore<String, String>> responseStore = buildStore(appDao.getResponseStateStore(), Serdes.String(), Serdes.String());
-
-        StreamsConfig config = new StreamsConfig(this.getConfig());
-
-        // region TOPOLOGY_USER settings
-        userTopology = builder
-                .build()
-                .addSource("USER_SOURCE", appDao.getTopic())
-                .addProcessor("USER_Process",
-                        () -> userProcessor
-                        , "USER_SOURCE")
-                .addStateStore(userStore, "USER_Process")
-                .addSink("USER_SINK", appDao.getTopologyTopic(), "USER_Process")
-        ;
-        //endregion
-
-        // region TOPOLOGY_REQUEST settings
         requestTopology = builder
                 .build()
-                .addSource("REQUEST_SOURCE", appDao.getAsyncRequestTopic())
-                .addProcessor("REQUEST_Process",
+                .addSource("TOPIC_REQUEST", stringDeserializer, avroDeserialier, appDao.getAsyncRequestTopic())
+                .addProcessor("TOPIC_PROCESS",
                         () -> topicRequestProcessor
-                        , "REQUEST_SOURCE")
-                .addStateStore(requestStore, "REQUEST_Process")
-                .addSink("REQUEST_SINK", appDao.getAsyncResponseTopic(), "REQUEST_Process")
+                        , "TOPIC_REQUEST")
+                .addStateStore(requestStore, "TOPIC_PROCESS")
+//                .addSink("TOPIC_RESPONSE", appDao.getAsyncResponseTopic(), stringSerializer, stringSerializer, "TOPIC_REQUEST")
         ;
-        //endregion
-
-        //region TOPOLOGY_RESPONSE settings
-        responseTopology = builder
-                .build()
-                .addSource("RESPONSE_SOURCE", appDao.getAsyncResponseTopic())
-                .addProcessor("RESPONSE_Process",
-                        () -> topicResponseProcessor
-                        , "RESPONSE_SOURCE")
-                .addStateStore(responseStore, "RESPONSE_Process")
-        ;
-        //endregion
 
 
-        userStream = new KafkaStreams(requestTopology, config);
-        userStream.setUncaughtExceptionHandler((Thread thread, Throwable throwable) -> {
-            log.error("UserProcessor#REQUEST_PROCESSOR# ", throwable);
-            throwable.printStackTrace();
-        });
-
-        requestStream = new KafkaStreams(userTopology, config);
+        requestStream = new KafkaStreams(requestTopology, config);
         requestStream.setUncaughtExceptionHandler((Thread thread, Throwable throwable) -> {
             log.error("UserProcessor#REQUEST_PROCESSOR# ", throwable);
             throwable.printStackTrace();
         });
+        requestStream.start();
+        Runtime.getRuntime().addShutdownHook(new Thread(requestStream::close));
+
+    }
+
+    private void responseStream(StreamsConfig config) {
+
+        Map<String, String> props = new HashMap<>();
+        props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://" + appDao.getIp() + ":8081");
+        props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
+        Serializer avroSerializer = new KafkaAvroSerializer();
+        avroSerializer.configure(props, false);
+        Deserializer avroDeserialier = new KafkaAvroDeserializer();
+        avroDeserialier.configure(props, false);
+
+
+        StringDeserializer stringDeserializer = new StringDeserializer();
+
+        StreamsBuilder builder = new StreamsBuilder();
+        SpecificAvroSerde<SpecificAvroUser> avroSerde = new SpecificAvroSerde<>();
+        avroSerde.configure(Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG,
+                appDao.getSchemaRegistryHost() + ":" + appDao.getSchemaRegistryPort()), false);
+        StoreBuilder<KeyValueStore<String, SpecificAvroUser>> requestStore = Stores.keyValueStoreBuilder(
+                Stores.inMemoryKeyValueStore(appDao.getRequestStateStore()),
+                Serdes.String(),
+                avroSerde);
+
+        responseTopology = builder
+                .build()
+                .addSource("TOPIC_RESPONSE", stringDeserializer, stringDeserializer, appDao.getAsyncResponseTopic())
+                .addProcessor("TOPIC_RESPONSE_PROCESS",
+                        () -> topicResponseProcessor
+                        , "TOPIC_RESPONSE")
+//                .addStateStore(requestStore, "TOPIC_PROCESS")
+//                .addSink("TOPIC_RESPONSE", appDao.getAsyncResponseTopic(), stringSerializer, stringSerializer, "TOPIC_REQUEST")
+        ;
+
+
         responseStream = new KafkaStreams(responseTopology, config);
         responseStream.setUncaughtExceptionHandler((Thread thread, Throwable throwable) -> {
-            log.error("UserProcessor#RESPONSE_PROCESSOR ", throwable);
+            log.error("UserProcessor#REQUEST_PROCESSOR# ", throwable);
             throwable.printStackTrace();
         });
-        userStream.start();
-/*        requestStream.start();
-        responseStream.start();*/
-        Runtime.getRuntime().addShutdownHook(new Thread(userStream::close));
-        Runtime.getRuntime().addShutdownHook(new Thread(requestStream::close));
+        responseStream.start();
         Runtime.getRuntime().addShutdownHook(new Thread(responseStream::close));
+
+    }
+
+    public void init() {
+        SpecificAvroSerde<SpecificAvroUser> avroSerde = new SpecificAvroSerde<>();
+        avroSerde.configure(Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG,
+                appDao.getSchemaRegistryHost() + ":" + appDao.getSchemaRegistryPort()), false);
+        StoreBuilder<KeyValueStore<String, String>> responseStore = buildStore(appDao.getResponseStateStore(), Serdes.String(), Serdes.String());
+
+        StreamsConfig config = new StreamsConfig(this.getConfig());
+        requestStream(config);
+        responseStream(config);
+
     }
 
     private Properties getConfig() {
@@ -145,8 +167,8 @@ public class AsyncTopology {
         settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "avro-stream-requestTopology");
         settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, appDao.getIp() + ":" + appDao.getPort());
         settings.put(StreamsConfig.STATE_DIR_CONFIG, "tmp/kafka-requestStream");
-        settings.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-        settings.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, GenericAvroSerde.class);
+        settings.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+        settings.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class.getName());
         settings.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, appDao.getSchemaRegistryHost() + ":" + appDao.getSchemaRegistryPort());
         return settings;
     }
@@ -164,9 +186,10 @@ public class AsyncTopology {
                 valueSerde);
     }
 
-    public KeyValueStore<String, GenericRecord> getUserProcessorKeyValueStore() {
-        return this.userProcessor.getKvStore();
+    public KeyValueStore<String, SpecificAvroUser> getUserProcessorKeyValueStore() {
+        return this.topicRequestProcessor.getKvStore();
     }
+
     public ConcurrentHashMap<String, AsyncResponse> getConcurrentHashMap() {
         return this.topicResponseProcessor.getConcurrentHashMap();
     }

@@ -40,22 +40,27 @@ public class TopicResponseProcessor implements Processor<String, String> {
     @SuppressWarnings("unchecked")
     public void init(ProcessorContext context) {
         this.context = context;
-        if (appPropertyDao != null)
-            this.kvStore = (KeyValueStore) context.getStateStore(appPropertyDao.getUserStateStore());
+//            this.kvStore = (KeyValueStore) context.getStateStore(appPropertyDao.getUserStateStore());
 //        kvStore = (KeyValueStore) context.getStateStore("storage2");
     }
 
     @Override
     public void process(String uuid, String booleanValue) {
-/*        AsyncResponse asyncResponse = this._tMap.get(uuid);
+        AsyncResponse asyncResponse = this._tMap.get(uuid);
+        if (asyncResponse == null) {
+            logger.info("UserProcessor#TOPIC_RESPONSE_PROCESSOR#: no match in map");
+            return;
+        }
+
         SpecificAvroUser user = kvStore.get(uuid);
         if (booleanValue.equalsIgnoreCase("true")) {
+            logger.info("UserProcessor#TOPIC_RESPONSE_PROCESSOR#: SENDING: " + uuid + ": " + user.toString());
             asyncResponse.resume(Response.status(Response.Status.CREATED).entity(user).build());
         } else {
+            logger.info("UserProcessor#TOPIC_RESPONSE_PROCESSOR#: NOT SENDING: " + uuid);
             asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST).entity(user).build());
         }
 //        this.kvStore.put(k, v);
-        logger.info("UserProcessor#TOPIC_REQUEST_PROCESSOR#: stored and forwarded: " + uuid + ": " + user.toString());*/
 
     }
 

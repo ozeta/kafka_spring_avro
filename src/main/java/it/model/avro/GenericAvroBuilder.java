@@ -25,7 +25,7 @@ public class GenericAvroBuilder<P, C> implements AvroBuilder<P, C> {
                 "   ]\n" +
                 "}\n";
         String key = Long.toString(System.currentTimeMillis());
-        key = user.getId() + key;
+        key = user.getId();
         Schema.Parser parser = new Schema.Parser();
         Schema schema = parser.parse(userSchema);
         GenericRecord avroRecord = new GenericData.Record(schema);

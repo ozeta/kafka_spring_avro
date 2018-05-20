@@ -19,7 +19,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
-@Component
 public class AvroConsumer<P, C> {
     private String ip;
     private String topic;

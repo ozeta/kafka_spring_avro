@@ -17,7 +17,7 @@ public class SpecificAvroBuilder<P, C> implements AvroBuilder<P, C> {
     public P build(User user) {
         SpecificAvroUser specificAvroUser = new SpecificAvroUser();
         String key = Long.toString(System.currentTimeMillis());
-        key = user.getId() + key;
+        key = user.getId();
         specificAvroUser.setId(key);
         specificAvroUser.setName(user.getName());
         specificAvroUser.setSurname(user.getSurname());

@@ -2,6 +2,7 @@ package it.streaming.topology.processors;
 
 
 import it.model.StateStoreWrapperSingleton;
+import it.model.avro.SpecificAvroUser;
 import it.spring.ApplicationPropertyDAO;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.streams.processor.Processor;
@@ -15,15 +16,15 @@ import org.springframework.stereotype.Component;
 import java.lang.invoke.MethodHandles;
 
 @Component
-public class UserProcessor implements Processor<String, GenericRecord> {
+public class UserProcessor implements Processor<String, SpecificAvroUser> {
     private static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private ProcessorContext context;
-    private KeyValueStore<String, GenericRecord> kvStore;
+    private KeyValueStore<String, SpecificAvroUser> kvStore;
     private ApplicationPropertyDAO appDao;
 
     @Autowired
-    public ApplicationPropertyDAO getAppPropertyDao() {
-        return appDao;
+    public void setAppPropertyDao(ApplicationPropertyDAO appDao) {
+        this.appDao = appDao;
     }
 
     @Override
@@ -34,7 +35,7 @@ public class UserProcessor implements Processor<String, GenericRecord> {
     }
 
     @Override
-    public void process(String k, GenericRecord v) {
+    public void process(String k, SpecificAvroUser v) {
         logger.info("UserProcessor#process:" + v.toString());
         v.put("surname", v.get("surname") + "Processed");
         v.put("name", v.get("name") + "Processed");
@@ -52,7 +53,7 @@ public class UserProcessor implements Processor<String, GenericRecord> {
     public void close() {
         //kvStore.close();
     }
-    public KeyValueStore<String, GenericRecord> getKvStore() {
+    public KeyValueStore<String, SpecificAvroUser> getKvStore() {
         return kvStore;
     }
 }

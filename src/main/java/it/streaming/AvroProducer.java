@@ -31,14 +31,21 @@ public class AvroProducer<K, P, C> {
         this.topic = topic;
         this.props = new Properties();
         this.props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.ip + ":" + this.port);
-        this.props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        this.props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
         this.props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://" + this.ip + ":8081");
-        this.producer = new KafkaProducer<>(this.props);
+
 
     }
-
+    public Future produce(K key, P value) throws SerializationException {
+        this.props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        this.props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        this.producer = new KafkaProducer<>(this.props);
+        ProducerRecord<K, P> record = new ProducerRecord<>(this.topic, key, value);
+        return this.producer.send(record);
+    }
     public Future produce(K key, User user) throws SerializationException {
+        this.props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        this.props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+        this.producer = new KafkaProducer<>(this.props);
         if (this.recordBuilder == null) throw new RuntimeException("recordBuilder not configured");
         P build = this.recordBuilder.build(user);
         ProducerRecord<K, P> record = new ProducerRecord<>(this.topic, key, build);

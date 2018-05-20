@@ -26,8 +26,9 @@ public class ApplicationPropertyDAO {
     private String responseStateStore;
     @Value("${kafka.schema.registry.host}")
     private String schemaRegistryHost;
-    @Value("${kafka.schema.registry.port}")
+    @Value("${kafka.processor.timeout}")
     private String schemaRegistryPort;
+    private long timeou;
 
     public String getIp() {
         return ip;
@@ -73,5 +74,8 @@ public class ApplicationPropertyDAO {
         return userStateStore;
     }
 
+    public long getInitTimeout() {
+        return 0;
+    }
 }
 
