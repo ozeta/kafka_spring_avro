@@ -1,7 +1,0 @@
-{
-    "type":"record",
-    "name":"it.Myrecord",
-    "fields": [
-        {"name":"f1","type":"string"}
-    ]
-}

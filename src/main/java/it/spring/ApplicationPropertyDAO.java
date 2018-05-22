@@ -14,6 +14,8 @@ public class ApplicationPropertyDAO {
     private String asyncRequestTopic;
     @Value("${kafka.topic.async.response}")
     private String asyncResponseTopic;
+    @Value("${kafka.topic.async.response.sink}")
+    private String asyncResponseSinkTopic;
     @Value("kafka.topology.topic")
     private String topologyTopic;
     @Value("${kafka.topic.port}")
@@ -76,6 +78,10 @@ public class ApplicationPropertyDAO {
 
     public long getInitTimeout() {
         return 0;
+    }
+
+    public String getAsyncResponseSinkTopic() {
+        return asyncResponseSinkTopic;
     }
 }
 

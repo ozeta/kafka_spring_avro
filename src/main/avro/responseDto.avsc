@@ -1,0 +1,9 @@
+{
+    "type":"record",
+    "namespace": "it.model.avro",
+    "name":"ResponseDto",
+    "fields": [
+        {"name":"uuid","type":"string"},
+        {"name":"value","type":"boolean"}
+    ]
+}

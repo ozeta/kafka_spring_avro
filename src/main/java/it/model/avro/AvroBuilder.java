@@ -1,10 +1,10 @@
 package it.model.avro;
 
-import it.model.User;
+import it.model.UserDTO;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 
 public interface AvroBuilder<P,C> {
-    P build(User user);
+    P build(UserDTO userDTO);
     C consume(ConsumerRecord<String, P> record);
 }

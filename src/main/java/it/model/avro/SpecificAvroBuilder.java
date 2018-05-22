@@ -1,12 +1,12 @@
 package it.model.avro;
 
-import it.model.User;
+import it.model.UserDTO;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 public class SpecificAvroBuilder<P, C> implements AvroBuilder<P, C> {
 
     /*    public Future send() {
-            ProducerRecord<String, GenericRecord> record = new ProducerRecord<>(this.topic, user.getId(), avroRecord);
+            ProducerRecord<String, GenericRecord> record = new ProducerRecord<>(this.topic, userDTO.getId(), avroRecord);
             try {
                 return this.producer.send(record);
             } catch (SerializationException e) {
@@ -14,13 +14,13 @@ public class SpecificAvroBuilder<P, C> implements AvroBuilder<P, C> {
                 return null;
             }
         }*/
-    public P build(User user) {
+    public P build(UserDTO userDTO) {
         SpecificAvroUser specificAvroUser = new SpecificAvroUser();
         String key = Long.toString(System.currentTimeMillis());
-        key = user.getId();
+        key = userDTO.getId();
         specificAvroUser.setId(key);
-        specificAvroUser.setName(user.getName());
-        specificAvroUser.setSurname(user.getSurname());
+        specificAvroUser.setName(userDTO.getName());
+        specificAvroUser.setSurname(userDTO.getSurname());
         return (P) specificAvroUser;
     }
 

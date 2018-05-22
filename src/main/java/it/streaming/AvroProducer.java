@@ -2,7 +2,7 @@ package it.streaming;
 
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
-import it.model.User;
+import it.model.UserDTO;
 import it.model.avro.AvroBuilder;
 import it.model.avro.GenericAvroBuilder;
 import it.model.avro.SpecificAvroBuilder;
@@ -23,7 +23,7 @@ public class AvroProducer<K, P, C> {
     private String topic;
     private Properties props;
     private KafkaProducer<K, P> producer;
-    private AvroBuilder<P, User> recordBuilder;
+    private AvroBuilder<P, UserDTO> recordBuilder;
 
     public AvroProducer(String ip, String topicPort, String topic) {
         this.ip = ip;
@@ -42,12 +42,12 @@ public class AvroProducer<K, P, C> {
         ProducerRecord<K, P> record = new ProducerRecord<>(this.topic, key, value);
         return this.producer.send(record);
     }
-    public Future produce(K key, User user) throws SerializationException {
+    public Future produce(K key, UserDTO userDTO) throws SerializationException {
         this.props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         this.props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
         this.producer = new KafkaProducer<>(this.props);
         if (this.recordBuilder == null) throw new RuntimeException("recordBuilder not configured");
-        P build = this.recordBuilder.build(user);
+        P build = this.recordBuilder.build(userDTO);
         ProducerRecord<K, P> record = new ProducerRecord<>(this.topic, key, build);
             return this.producer.send(record);
     }

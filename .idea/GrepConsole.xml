@@ -25,6 +25,40 @@
                           </GrepModel>
                         </option>
                       </Pin>
+                      <Pin>
+                        <option name="consoleUUID" value="95d8d738-769f-4f56-a59d-9fc5ac030691" />
+                        <option name="grepModel">
+                          <GrepModel>
+                            <option name="expression" value="TOPOLOGY#" />
+                            <option name="unlessExpression" value="" />
+                          </GrepModel>
+                        </option>
+                      </Pin>
+                    </list>
+                  </option>
+                </Pins>
+              </value>
+            </entry>
+            <entry>
+              <key>
+                <RunConfigurationRef>
+                  <option name="icon" value="phase.png" />
+                  <option name="name" value="jersey5 [org.apache.avro:avro-maven-plugin:1.8.2:schema]" />
+                </RunConfigurationRef>
+              </key>
+              <value>
+                <Pins>
+                  <option name="pins">
+                    <list>
+                      <Pin>
+                        <option name="consoleUUID" value="4219f6e6-7887-401a-aee2-6ef6c8ee8edb" />
+                        <option name="grepModel">
+                          <GrepModel>
+                            <option name="expression" value="UserProcessor#" />
+                            <option name="unlessExpression" value="" />
+                          </GrepModel>
+                        </option>
+                      </Pin>
                     </list>
                   </option>
                 </Pins>

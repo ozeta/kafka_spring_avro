@@ -3,7 +3,7 @@ package it.streaming;
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
-import it.model.User;
+import it.model.UserDTO;
 import it.model.avro.AvroBuilder;
 import it.model.avro.SpecificAvroUser;
 import it.model.avro.GenericAvroBuilder;
@@ -12,7 +12,6 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -87,7 +86,7 @@ public class AvroConsumer<P, C> {
                     return null;
                 }
                 GenericRecord genericRecord = (GenericRecord) value;
-                User u = new User();
+                UserDTO u = new UserDTO();
                 u.setId(genericRecord.get("id").toString());
                 u.setName(genericRecord.get("name").toString());
                 u.setSurname(genericRecord.get("surname").toString());
@@ -106,7 +105,7 @@ public class AvroConsumer<P, C> {
                     return null;
                 }
                 SpecificAvroUser specificAvroUser = (SpecificAvroUser) value;
-                User u = new User();
+                UserDTO u = new UserDTO();
                 u.setId(specificAvroUser.getId().toString());
                 u.setName(specificAvroUser.getName().toString());
                 u.setSurname(specificAvroUser.getSurname().toString());
