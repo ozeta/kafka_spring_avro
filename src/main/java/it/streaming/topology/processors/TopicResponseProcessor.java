@@ -1,8 +1,10 @@
 package it.streaming.topology.processors;
 
 
+import it.model.avro.ResponseDto;
 import it.model.avro.SpecificAvroUser;
 import it.spring.ApplicationPropertyDAO;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueStore;
@@ -17,73 +19,94 @@ import java.lang.invoke.MethodHandles;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class TopicResponseProcessor implements Processor<String, String> {
+public class TopicResponseProcessor implements Processor<String, SpecificRecord> {
     private static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private ConcurrentHashMap<String, AsyncResponse> asyncMap = new ConcurrentHashMap<>();
     private ProcessorContext context;
-
-    public KeyValueStore<String, SpecificAvroUser> getUserStore() {
-        return userStore;
-    }
-
-    private KeyValueStore<String, SpecificAvroUser> userStore;
+    private KeyValueStore<String, SpecificRecord> responseStore;
+    private KeyValueStore<String, SpecificRecord> requestStore;
     private ApplicationPropertyDAO appDao;
-    private ConcurrentHashMap<String, AsyncResponse> _tMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, SpecificRecord> specificMap = new ConcurrentHashMap<>();
 
     @Autowired
     public void setAppDao(ApplicationPropertyDAO appDao) {
         this.appDao = appDao;
     }
 
-//    @Autowired
-//    public void setConcurrentMap(ConcurrentHashMap<String, AsyncResponse> map) {
-//        this._tMap = map;
-//    }
-
     @Override
-    @SuppressWarnings("unchecked")
-    public void init(ProcessorContext context) {
-        logger.info("UserProcessor#TOPIC_RESPONSE_PROCESSOR INITIALIZED#");
-
-        this.context = context;
-        this.userStore = (KeyValueStore) context.getStateStore(appDao.getResponseStateStore());
-//            this.kvStore = (KeyValueStore) context.getStateStore(appDao.getUserStateStore());
-//        kvStore = (KeyValueStore) context.getStateStore("storage2");
+    public void init(ProcessorContext processorContext) {
+        context = processorContext;
+        logger.info("TOPOLOGY# Response processor started");
+        this.responseStore = (KeyValueStore) context.getStateStore(appDao.getResponseStateStore());
     }
 
+    /**
+     * legge da topic response <uuid, boolean>. legge da una mappa<uuid, asyncresponse>
+     *
+     * @param k
+     * @param v
+     */
     @Override
-    public void process(String uuid, String booleanValue) {
-        logger.info("UserProcessor#TOPIC_RESPONSE_PROCESSOR#");
-        AsyncResponse asyncResponse = this._tMap.get(uuid);
-        if (asyncResponse == null) {
-            logger.info("UserProcessor#TOPIC_RESPONSE_PROCESSOR#: no match in map");
+    public void process(String k, SpecificRecord v) {
+        logger.info("TOPOLOGY# RESPONSE #MAP# specificMap size: " + specificMap.size());
+        logger.info("TOPOLOGY# RESPONSE #MAP# asyncMap size: " + asyncMap.size());
+
+/*        if (requestStore == null) {
+            logger.error("TOPOLOGY# RESPONSE # STORE is null");
             return;
-        } else {
-            logger.info("UserProcessor#TOPIC_RESPONSE_PROCESSOR#: response:" + asyncResponse.toString());
-
+        }*/
+        logger.info("TOPOLOGY# RESPONSE processing");
+        ResponseDto response = (ResponseDto) v;
+        AsyncResponse asyncResponse = this.asyncMap.get(k);
+        context.forward(k, v);
+        responseStore.put(k, v);
+        if (asyncResponse == null) {
+            logger.error("TOPOLOGY# RESPONSE # asyncResponse is null");
+            return;
         }
-
-        SpecificAvroUser user = userStore.get(uuid);
-        if (booleanValue.equalsIgnoreCase("true")) {
-            logger.info("UserProcessor#TOPIC_RESPONSE_PROCESSOR#: SENDING: " + uuid + ": " + user.toString());
-            asyncResponse.resume(Response.status(Response.Status.CREATED).entity(user).build());
+        if (response.getValue()) {
+            SpecificAvroUser user = (SpecificAvroUser) specificMap.get(k);
+            if (user != null)
+                asyncResponse.resume(Response.status(Response.Status.CREATED).entity(user.toString()).build());
+            else {
+                String error = "{\"message\":\"User is null\"}";
+                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST).entity(error).build());
+                logger.error("TOPOLOGY# RESPONSE # user is null");
+            }
         } else {
-            logger.info("UserProcessor#TOPIC_RESPONSE_PROCESSOR#: NOT SENDING: " + uuid);
-            asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST).entity(user).build());
+            String error = "{\"message\":\"Sorry, but the flag is set to false\"}";
+            logger.info("TOPOLOGY# RESPONSE # flag is false");
+            asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST).entity(error).build());
         }
-
     }
 
     @Override
-    public void punctuate(long timestamp) {
-        //deprecated
+    public void punctuate(long l) {
+
     }
 
     @Override
     public void close() {
-        //kvStore.close();
+
     }
 
-    public ConcurrentHashMap<String, AsyncResponse> getConcurrentHashMap() {
-        return _tMap;
+    public KeyValueStore<String, SpecificRecord> getResponseStore() {
+        return responseStore;
+    }
+
+    public void setRequestStore(KeyValueStore<String, SpecificRecord> requestStore) {
+        this.requestStore = requestStore;
+    }
+
+    public ConcurrentHashMap<String, AsyncResponse> getAsyncMap() {
+        return this.asyncMap;
+    }
+
+    public void setAsyncMap(ConcurrentHashMap<String, AsyncResponse> asyncMap) {
+        this.asyncMap = asyncMap;
+    }
+
+    public ConcurrentHashMap<String, SpecificRecord> getSpecificHashMap() {
+        return this.specificMap;
     }
 }

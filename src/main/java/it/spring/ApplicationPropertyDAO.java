@@ -2,7 +2,6 @@ package it.spring;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 @Component
 public class ApplicationPropertyDAO {
@@ -28,9 +27,10 @@ public class ApplicationPropertyDAO {
     private String responseStateStore;
     @Value("${kafka.schema.registry.host}")
     private String schemaRegistryHost;
-    @Value("${kafka.processor.timeout}")
+    @Value("${kafka.schema.registry.port}")
     private String schemaRegistryPort;
-    private long timeou;
+    @Value("${kafka.processor.timeout}")
+    private long timeout;
 
     public String getIp() {
         return ip;
@@ -77,7 +77,7 @@ public class ApplicationPropertyDAO {
     }
 
     public long getInitTimeout() {
-        return 0;
+        return timeout;
     }
 
     public String getAsyncResponseSinkTopic() {

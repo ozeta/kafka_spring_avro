@@ -34,6 +34,8 @@ public class KafkaController {
     Logger log = Logger.getLogger(KafkaController.class);
     private KeyValueStore<String, SpecificRecord> _store;
     private ConcurrentHashMap<String, AsyncResponse> _asyncMap;
+    private ConcurrentHashMap<String, SpecificRecord> _specificMap;
+
     private AsyncTopology2 asyncTopology;
     private ApplicationPropertyDAO appDao;
     private AsyncSpecificProducer asyncProducer;
@@ -208,14 +210,14 @@ public class KafkaController {
 
             Future response = asyncProducer.produce(uuid, specificAvroUser);
 //            _store = asyncTopology.getUserProcessorKeyValueStore();
-            _asyncMap = asyncTopology.getConcurrentHashMap();
-            _store = asyncTopology.getUsersMap();
-            if (_store != null)
-                synchronized (_store) {
-                    _store.put(uuid, specificAvroUser);
-                }
+//            _store = asyncTopology.getUsersMap();
+//            if (_store != null) _store.put(uuid, specificAvroUser);
+            _asyncMap = asyncTopology.getResponseProcessorAsyncMap();
             if (_asyncMap != null) _asyncMap.put(uuid, asyncResponse);
-            log.info("UserProcessor#DONE ");
+            _specificMap = asyncTopology.getResponseProcessorSpecificMap();
+            if (_specificMap != null) _specificMap.put(uuid, specificAvroUser);
+
+            log.info("UserProcessor#DONE");
         } catch (Exception e) {
             log.error("UserProcessor#ERROR: ", e);
         }

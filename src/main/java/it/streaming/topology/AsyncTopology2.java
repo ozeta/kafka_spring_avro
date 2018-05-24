@@ -7,7 +7,6 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import it.model.avro.SpecificAvroUser;
 import it.spring.ApplicationPropertyDAO;
-import it.streaming.topology.processors.NewProcessors;
 import it.streaming.topology.processors.TopicRequestProcessor;
 import it.streaming.topology.processors.TopicResponseProcessor;
 import org.apache.avro.specific.SpecificRecord;
@@ -18,6 +17,7 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 import org.slf4j.Logger;
@@ -40,8 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AsyncTopology2 {
 
     private static Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    NewProcessors.TopicRequestProcessor newRequestProcessor;
-    NewProcessors.TopicResponseProcessor newResponseProcessor;
+    private TopicRequestProcessor newRequestProcessor;
+    private TopicResponseProcessor newResponseProcessor;
     private ApplicationPropertyDAO appDao;
     private Serializer avroSerializer;
     private Deserializer avroDeserialier;
@@ -51,18 +51,25 @@ public class AsyncTopology2 {
     private KafkaStreams responseStream;
 
     public KeyValueStore<String, SpecificRecord> getUsersMap() {
-        return this.newResponseProcessor.getStore();
+        return this.newResponseProcessor.getResponseStore();
     }
-    public ConcurrentHashMap<String, AsyncResponse> getConcurrentHashMap() {
-        return this.newResponseProcessor.getConcurrentHashMap();
+
+
+    public ConcurrentHashMap<String, AsyncResponse> getResponseProcessorAsyncMap() {
+        return this.newResponseProcessor.getAsyncMap();
     }
+
+    public ConcurrentHashMap<String, SpecificRecord> getResponseProcessorSpecificMap() {
+        return this.newResponseProcessor.getSpecificHashMap();
+    }
+
     @Autowired
-    public void setNewRequestProcessor(NewProcessors.TopicRequestProcessor newRequestProcessor) {
+    public void setNewRequestProcessor(TopicRequestProcessor newRequestProcessor) {
         this.newRequestProcessor = newRequestProcessor;
     }
 
     @Autowired
-    public void setNewResponseProcessor(NewProcessors.TopicResponseProcessor newResponseProcessor) {
+    public void setNewResponseProcessor(TopicResponseProcessor newResponseProcessor) {
         this.newResponseProcessor = newResponseProcessor;
     }
 
@@ -76,7 +83,7 @@ public class AsyncTopology2 {
         avroSerde.configure(Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG,
                 appDao.getSchemaRegistryHost() + ":" + appDao.getSchemaRegistryPort()), false);
         StoreBuilder<KeyValueStore<String, SpecificAvroUser>> requestStore = Stores.keyValueStoreBuilder(
-                Stores.persistentKeyValueStore(stateStore),
+                Stores.inMemoryKeyValueStore(stateStore),
                 Serdes.String(),
                 avroSerde);
         return requestStore;
@@ -110,31 +117,6 @@ public class AsyncTopology2 {
         return Serdes.serdeFrom(avroSerializer, avroDeserialier);
     }
 
-
-    @PostConstruct
-    public void initIt() throws Exception {
-//        init();
-        requestStream = initTopology("requestTopology",
-                "request_source",
-                "request_processor",
-                "request_sink",
-                appDao.getRequestStateStore(),
-                appDao.getAsyncRequestTopic(),
-                appDao.getAsyncResponseTopic(),
-                newRequestProcessor);
-        responseStream = initTopology("responseTopology",
-                "response_source",
-                "response_processor",
-                "response_sink",
-                appDao.getResponseStateStore(),
-                appDao.getAsyncResponseTopic(),
-                appDao.getAsyncResponseSinkTopic(),
-                newResponseProcessor);
-
-        startStream(requestStream);
-        startStream(responseStream);
-    }
-
     @PreDestroy
     public void cleanUp() throws Exception {
         log.info("TOPOLOGY# Spring clean up");
@@ -162,6 +144,31 @@ public class AsyncTopology2 {
             throwable.printStackTrace();
         });
         return stream;
+    }
+
+
+    @PostConstruct
+    public void initIt() throws Exception {
+//        init();
+        requestStream = initTopology("requestTopology",
+                "request_source",
+                "request_processor",
+                "request_sink",
+                appDao.getRequestStateStore(),
+                appDao.getAsyncRequestTopic(),
+                appDao.getAsyncResponseTopic(),
+                newRequestProcessor);
+        responseStream = initTopology("responseTopology",
+                "response_source",
+                "response_processor",
+                "response_sink",
+                appDao.getResponseStateStore(),
+                appDao.getAsyncResponseTopic(),
+                appDao.getAsyncResponseSinkTopic(),
+                newResponseProcessor);
+
+        startStream(requestStream);
+        startStream(responseStream);
     }
 
     private void startStream(KafkaStreams stream) {

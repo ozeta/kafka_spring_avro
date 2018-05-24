@@ -1,12 +1,13 @@
 package it.streaming.topology.processors;
 
 
-import it.model.avro.SpecificAvroUser;
+import it.model.avro.ResponseDto;
 import it.spring.ApplicationPropertyDAO;
-import it.streaming.AsyncSpecificProducer;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.processor.PunctuationType;
+import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,81 +16,78 @@ import org.springframework.stereotype.Component;
 import java.lang.invoke.MethodHandles;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 @Component
-public class TopicRequestProcessor implements Processor<String, SpecificAvroUser> {
+public class TopicRequestProcessor implements Processor<String, SpecificRecord> {
     private static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private ProcessorContext context;
-    //    private KeyValueStore<String, SpecificAvroUser> kvStore;
-    private Random rand = new Random();
-
+    private ConcurrentHashMap<String, SpecificRecord> specificUsersMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, SpecificRecord> enqueuedUsers = new ConcurrentHashMap<>();
     private ApplicationPropertyDAO appDao;
-
-    private ConcurrentHashMap<String, SpecificAvroUser> _cMap = new ConcurrentHashMap<>();
-    private AsyncSpecificProducer asyncProducer;
-
-    @Autowired
-    public void setAppPropertyDao(ApplicationPropertyDAO appPropertyDao) {
-        this.appDao = appPropertyDao;
-    }
+    private ProcessorContext context;
+    private Random rand = new Random();
+    private KeyValueStore<String, SpecificRecord> store;
 
     @Autowired
-    public void setAsyncProducer(AsyncSpecificProducer asyncProducer) {
-        this.asyncProducer = asyncProducer;
+    public void setAppDao(ApplicationPropertyDAO appDao) {
+        this.appDao = appDao;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void init(ProcessorContext context) {
-        this.context = context;
-//        this.kvStore = (KeyValueStore) context.getStateStore(appDao.getRequestStateStore());
-        this.context.schedule(10000, PunctuationType.WALL_CLOCK_TIME, (timestamp) -> {
-            logger.info("UserProcessor# PING?");
+    public void init(ProcessorContext processorContext) {
+        context = processorContext;
+        this.store = (KeyValueStore) context.getStateStore(appDao.getRequestStateStore());
+        logger.info("TOPOLOGY# Request processor started");
+        this.context.schedule(1000, PunctuationType.WALL_CLOCK_TIME, this::punctuate);
+    }
 
-//            Optional<String> any = this._cMap.keySet().stream().findAny();
-            if (_cMap.size() == 0) {
-                logger.info("UserProcessor#TOPIC_REQUEST_PROCESSOR#: NO NEW EVENTS");
-            } else {
-                this._cMap.forEach((k, v) -> {
-                    Boolean b = rand.nextBoolean();
-                    Future produce = asyncProducer.produce(k, b.toString());
-//                context.forward(k, b.toString());
-                    try {
-                        logger.info("UserProcessor#TOPIC_REQUEST_PROCESSOR#: " + produce.get().toString());
-                    } catch (InterruptedException | ExecutionException e) {
-                        logger.error("UserProcessor#TOPIC_REQUEST_PROCESSOR#: ", e);
-                    }
-                    logger.info("UserProcessor#TOPIC_REQUEST_PROCESSOR#: stored and forwarded: " + k + ": " + b.toString());
+    /**
+     * salva lo specific avro user nella concurrent hashmap
+     *
+     * @param k
+     * @param v
+     */
+    @Override
+    public void process(String k, SpecificRecord v) {
+        this.store.put(k, v);
+        enqueuedUsers.put(k, v);
+        logger.info("TOPOLOGY# REQUEST processing: " + v);
+    }
 
-                });
-                this._cMap.keySet().removeAll(this._cMap.keySet());
-            }
-//            context.commit();
+    /**
+     * richiamato dallo scheduler, prende il dato dalla concurrent map.
+     * genera il booleano e forwarda la nuova struttura <uuid, responsedto> nel sink.
+     *
+     * @param l
+     */
+
+    @Override
+    public void punctuate(long l) {
+        if (enqueuedUsers.size() == 0) {
+//            logger.info("TOPOLOGY# REQUEST# #PUNCTUATE: NO NEW EVENTS");
+            return;
+        }
+        enqueuedUsers.forEach((k, v) -> {
+            Boolean b = rand.nextBoolean();
+            ResponseDto response = new ResponseDto();
+            response.setUuid(k);
+            response.setValue(b);
+            context.forward(k, response);
+            logger.info("TOPOLOGY# RESPONSE# #PUNCTUATE: forwarded: " + response.toString());
         });
+        this.enqueuedUsers.keySet().removeAll(this.enqueuedUsers.keySet());
     }
-
-    @Override
-    public void process(String k, SpecificAvroUser v) {
-        logger.info("UserProcessor#TOPIC_REQUEST_PROCESSOR#: PROCESSED " + k);
-        this._cMap.put(k, v);
-    }
-
-    @Override
-    public void punctuate(long timestamp) {
-
-    }
-
 
     @Override
     public void close() {
-    }
-/*
 
-    public KeyValueStore<String, SpecificAvroUser> getKvStore() {
-        return this.kvStore;
     }
-*/
 
+    public ConcurrentHashMap<String, SpecificRecord> getConcurrentHashMap() {
+        return this.specificUsersMap;
+    }
+
+    public KeyValueStore<String, SpecificRecord> getResponseStore() {
+        return this.store;
+    }
 }
+
